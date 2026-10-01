@@ -93,7 +93,51 @@ requestRouter.post(
       }
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: 'Internal Server Error' + error.message });
+    }
+  },
+);
+
+requestRouter.post(
+  '/review/:status/:requestId',
+  checkValidMiddleware,
+  async (req, res) => {
+    try {
+      const loggedInUser = req.user;
+      const { status, requestId } = req.params;
+
+      const allowedStatus = ['accepted', 'rejected'];
+      // Check if the provided status is allowed
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({
+          message: 'Status not allowed!',
+        });
+      }
+      const connectionRequest = await ConnectionRequestModel.findOne({
+        _id: requestId,
+        toUserId: loggedInUser._id,
+        status: 'interested',
+      });
+
+      if (!connectionRequest) {
+        return res.status(404).json({
+          message: 'Connection request not found',
+        });
+      }
+      // Update the status of the connection request based on the provided status
+      connectionRequest.status = status;
+      // If request is rejected, store the rejection time
+      if (status === 'rejected') {
+        connectionRequest.rejectedAt = new Date();
+      }
+      const data = await connectionRequest.save();
+      res.json({
+        message: 'Connection request ' + status,
+        data,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' + error.message });
     }
   },
 );
