@@ -3,7 +3,7 @@ const authRouter = express.Router();
 const { validateSignUpData } = require('../utils/validate');
 const bycrypt = require('bcrypt');
 const User = require('../models/user');
-
+const redisClient = require('../config/redis');
 // Signup route
 authRouter.post('/signup', async (req, res) => {
   try {
@@ -66,9 +66,28 @@ authRouter.post('/login', async (req, res) => {
 });
 
 // Logout route
-authRouter.post('/logout', (req, res) => {
-  res.clearCookie('token', {});
-  return res.json({ message: 'User logged out successfully!' });
+authRouter.post('/logout', async (req, res) => {
+  try {
+    const { token } = req.cookies;
+    // Add the token to the Redis blacklist
+    await redisClient.set(`token:${token}`, 'blocked');
+    // have to add the expiry time , which is present in the payload of the token
+    const payload = jwt.decode(token);
+    if (!payload || !payload.exp) {
+      return res.status(400).send('Invalid token.');
+    }
+    // Set the expiry time for the token in Redis
+    await redisClient.expireAt(`token:${token}`, payload.exp);
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+    });
+    return res.status(200).json({ message: 'User logged out successfully!' });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    return res.status(500).send('Logout failed. Please try again later.');
+  }
 });
 
 module.exports = authRouter;
