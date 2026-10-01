@@ -4,6 +4,8 @@ const { validateSignUpData } = require('../utils/validate');
 const bycrypt = require('bcrypt');
 const User = require('../models/user');
 const redisClient = require('../config/redis');
+const jwt = require('jsonwebtoken');
+const checkValidMiddleware = require('../middlewares/checkvalidmiddleware');
 // Signup route
 authRouter.post('/signup', async (req, res) => {
   try {
@@ -66,7 +68,7 @@ authRouter.post('/login', async (req, res) => {
 });
 
 // Logout route
-authRouter.post('/logout', async (req, res) => {
+authRouter.post('/logout', checkValidMiddleware, async (req, res) => {
   try {
     const { token } = req.cookies;
     // Add the token to the Redis blacklist
