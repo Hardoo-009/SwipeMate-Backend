@@ -20,6 +20,10 @@ const connectionRequestSchema = new mongoose.Schema(
         message: `{VALUE} is incorrect status type`,
       },
     },
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );

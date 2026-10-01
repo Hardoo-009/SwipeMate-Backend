@@ -7,6 +7,7 @@ const redisClient = require('./config/redis');
 const cors = require('cors');
 const authRouter = require('./routes/auth');
 const profileRouter = require('./routes/profile');
+const requestRouter = require('./routes/request');
 
 app.use(cookieParser());
 app.use(cors());
@@ -16,6 +17,8 @@ app.use(express.json());
 app.use('/user', authRouter);
 // Use the profileRouter for routes starting with /profile
 app.use('/profile', profileRouter);
+// Use the requestRouter for routes starting with /request
+app.use('/request', requestRouter);
 
 async function InitializeConnection() {
   try {
