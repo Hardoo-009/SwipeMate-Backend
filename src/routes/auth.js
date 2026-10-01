@@ -6,6 +6,7 @@ const User = require('../models/user');
 const redisClient = require('../config/redis');
 const jwt = require('jsonwebtoken');
 const checkValidMiddleware = require('../middlewares/checkvalidmiddleware');
+const bcrypt = require('bcrypt');
 // Signup route
 authRouter.post('/signup', async (req, res) => {
   try {
@@ -31,9 +32,11 @@ authRouter.post('/signup', async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: 'None',
-      expires: new Date(Date.now() + 8 * 3600000),
+      expires: new Date(Date.now() + 8 * 3600000), // 8 hours in milliseconds
     });
-    return res.json({ message: 'User Added successfully!', data: savedUser });
+    // filter out the password from the response
+    const { password: userPassword, ...userData } = savedUser.toObject();
+    return res.json({ message: 'User Added successfully!', data: userData });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
@@ -61,7 +64,12 @@ authRouter.post('/login', async (req, res) => {
       sameSite: 'None',
       expires: new Date(Date.now() + 8 * 3600000),
     });
-    return res.json({ message: 'User logged in successfully!', data: user });
+    // filter out the password from the response
+    const { password: userPassword, ...userData } = user.toObject();
+    return res.json({
+      message: `${user.firstName} ${user.lastName} logged in successfully!`,
+      data: userData,
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
