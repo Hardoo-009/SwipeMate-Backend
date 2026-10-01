@@ -5,15 +5,17 @@ const connectDB = require('./config/database');
 const cookieParser = require('cookie-parser');
 const redisClient = require('./config/redis');
 const cors = require('cors');
+const authRouter = require('./routes/auth');
+const profileRouter = require('./routes/profile');
 
 app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 
-// Define your routes here
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
-});
+// Use the authRouter for routes starting with /user
+app.use('/user', authRouter);
+// Use the profileRouter for routes starting with /profile
+app.use('/profile', profileRouter);
 
 async function InitializeConnection() {
   try {
