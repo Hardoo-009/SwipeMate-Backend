@@ -110,11 +110,41 @@ userRouter.get('/feed', checkValidMiddleware, async (req, res) => {
     //
     // We use a Set because it automatically prevents duplicate IDs.
     const hideUsersFromFeed = new Set();
-
+    const loggedInUserId = loggedInUser._id.toString();
     // 30 days in milliseconds
     const cooldown = 30 * 24 * 60 * 60 * 1000;
     //Decide which users should be hidden from the feed
     connectionRequests.forEach((request) => {
+      const fromUserId = request.fromUserId.toString();
+      const toUserId = request.toUserId.toString();
+
+      // ACCEPTED
+      // They are already connected.
+      // Neither should appear in the other's dating feed.
+      if (request.status === 'accepted') {
+        hideUsersFromFeed.add(fromUserId);
+        hideUsersFromFeed.add(toUserId);
+        return;
+      }
+      //INTERESTED
+      //A → B = interested , B has not responded yet
+      //We should hide both A and B from each other's feed
+      if (request.status === 'interested') {
+        hideUsersFromFeed.add(fromUserId);
+        hideUsersFromFeed.add(toUserId);
+        return;
+      }
+      // IGNORED
+      // INGONED is unidirectional. If A → B = ignored, then A has ignored B.
+      // Therefore, B should not appear in A's feed , but A can still appear in B's feed.
+      if (request.status === 'ignored') {
+        // Only hide the target user if the logged-in user
+        // is the person who performed the ignore action.
+        if (fromUserId === loggedInUserId) {
+          hideUsersFromFeed.add(toUserId);
+        }
+        return;
+      }
       // Request was rejected
       if (request.status === 'rejected') {
         // Check whether the 30-day rejection cooldown
@@ -126,8 +156,8 @@ userRouter.get('/feed', checkValidMiddleware, async (req, res) => {
         if (isWithinCooldown) {
           // Rejection happened less than 30 days ago.
           // Therefore, hide both users from each other's feed.
-          hideUsersFromFeed.add(request.fromUserId.toString());
-          hideUsersFromFeed.add(request.toUserId.toString());
+          hideUsersFromFeed.add(fromUserId);
+          hideUsersFromFeed.add(toUserId);
         }
 
         // If more than 30 days have passed,
@@ -135,14 +165,8 @@ userRouter.get('/feed', checkValidMiddleware, async (req, res) => {
         // Therefore they can appear in the feed again.
         return;
       }
-      // All other statuses
-      // interested -> pending request
-      // accepted   -> already connected
-      // ignored    -> ignored
-      // For now, we hide users for all these statuses.
-      hideUsersFromFeed.add(request.fromUserId.toString());
-      hideUsersFromFeed.add(request.toUserId.toString());
     });
+    // Now we can query the User collection to get users who are not in the hideUsersFromFeed set
     const users = await User.find({
       $and: [
         // Don't show users who are already involved
