@@ -14,8 +14,8 @@ app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 
-// Use the authRouter for routes starting with /user
-app.use('/user', authRouter);
+// Use the authRouter for routes starting with /auth
+app.use('/auth', authRouter);
 // Use the profileRouter for routes starting with /profile
 app.use('/profile', profileRouter);
 // Use the requestRouter for routes starting with /request

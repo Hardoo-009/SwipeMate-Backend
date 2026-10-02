@@ -3,6 +3,7 @@ const requestRouter = express.Router();
 const checkValidMiddleware = require('../middlewares/checkvalidmiddleware');
 const ConnectionRequestModel = require('../models/connectionrequest');
 const User = require('../models/user');
+const mongoose = require('mongoose');
 // Route to send a connection request
 requestRouter.post(
   '/send/:status/:toUserId',
