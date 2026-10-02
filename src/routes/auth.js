@@ -44,7 +44,7 @@ authRouter.post('/signup', async (req, res) => {
 });
 
 // Login route
-authRouter.post('/login', checkValidMiddleware, async (req, res) => {
+authRouter.post('/login', async (req, res) => {
   try {
     const { emailId, password } = req.body;
     if (!emailId) throw new Error('Invalid Credentials');

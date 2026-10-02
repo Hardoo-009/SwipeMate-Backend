@@ -34,12 +34,14 @@ profileRouter.patch('/edit', checkValidMiddleware, async (req, res) => {
       loggedInUser[key] = req.body[key];
     });
     await loggedInUser.save();
+    // Exclude sensitive information like password from the response
+    const { password, ...userData } = loggedInUser.toObject();
     return res.json({
       message: `${loggedInUser.firstName} ${loggedInUser.lastName}'s profile updated successfully`,
-      data: loggedInUser,
+      data: userData,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 

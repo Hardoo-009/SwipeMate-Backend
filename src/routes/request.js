@@ -2,7 +2,7 @@ const express = require('express');
 const requestRouter = express.Router();
 const checkValidMiddleware = require('../middlewares/checkvalidmiddleware');
 const ConnectionRequestModel = require('../models/connectionrequest');
-
+const User = require('../models/user');
 // Route to send a connection request
 requestRouter.post(
   '/send/:status/:toUserId',
@@ -16,6 +16,12 @@ requestRouter.post(
       const allowedStatus = ['ignored', 'interested'];
       if (!allowedStatus.includes(status)) {
         return res.status(400).json({ error: 'Invalid status' + status });
+      }
+      // Check if the toUserId is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(toUserId)) {
+        return res.status(400).json({
+          error: 'Invalid user ID',
+        });
       }
       // check if toUserId is present in the database or not
       const toUser = await User.findById(toUserId);
@@ -35,7 +41,7 @@ requestRouter.post(
           message: 'You are already connected',
         });
       }
-
+      // check if the existing request is interested
       if (existingRequest?.status === 'interested') {
         return res.status(400).json({
           message: 'Connection request already exists',
@@ -69,7 +75,50 @@ requestRouter.post(
           data,
         });
       }
+      /*
+      Handle an existing ignored request
+      A → B = ignored
+      Later A changes their mind:
+      A → B = interested
+      We should update the existing document rather than
+      creating:
+      A → B = ignored
+      A → B = interested
+      which would give us duplicate relationships.
+      */
+      if (
+        existingRequest?.status === 'ignored' &&
+        existingRequest.fromUserId.toString() === fromUserId.toString()
+      ) {
+        existingRequest.status = status;
 
+        const data = await existingRequest.save();
+
+        return res.status(201).json({
+          message:
+            status === 'interested'
+              ? `${req.user.firstName} is interested in connecting with ${toUser.firstName}`
+              : `${req.user.firstName} ignored ${toUser.firstName}`,
+          data,
+        });
+      }
+      /*
+      If the other user already ignored this user
+      Example:
+      B → A = ignored
+      Now A tries:
+      A → B = interested
+      I would NOT allow A to create another request if B has already explicitly ignored A.
+      */
+      if (
+        existingRequest?.status === 'ignored' &&
+        existingRequest.fromUserId.toString() !== fromUserId.toString()
+      ) {
+        return res.status(400).json({
+          message: 'This user is not available for a connection request',
+        });
+      }
+      // No existing relationship
       const connectionRequest = new ConnectionRequestModel({
         fromUserId,
         toUserId,
