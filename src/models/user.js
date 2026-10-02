@@ -64,12 +64,12 @@ const userSchema = new mongoose.Schema(
       default: function () {
         // this refers to the current document (user) being created
         if (this.gender === 'female') {
-          return 'https://images.unsplash.com/photo-1544725176-7c40e5a2c9f9?w=256&h=256&fit=crop&auto=format';
+          return 'https://cdn.vectorstock.com/i/500p/28/04/woman-silhouette-profile-vector-66472804.jpg';
         }
         if (this.gender === 'male') {
-          return 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=256&h=256&fit=crop&auto=format';
+          return 'https://static.vecteezy.com/system/resources/previews/063/477/498/non_2x/illustration-of-generic-male-avatar-in-gray-tones-for-anonymous-profile-placeholder-with-neutral-expression-designed-for-use-in-online-platforms-and-social-media-vector.jpg';
         }
-        return 'https://images.unsplash.com/photo-1548932813-1ff6aa1e0a02?w=256&h=256&fit=crop&auto=format';
+        return 'https://media.istockphoto.com/id/2151669184/vector/vector-flat-illustration-in-grayscale-avatar-user-profile-person-icon-gender-neutral.jpg?s=612x612&w=0&k=20&c=UEa7oHoOL30ynvmJzSCIPrwwopJdfqzBs0q69ezQoM8=';
       },
       validate(value) {
         if (!validator.isURL(value)) {
