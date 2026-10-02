@@ -13,7 +13,7 @@ authRouter.post('/signup', async (req, res) => {
     // Validation logic for signup data
     validateSignUpData(req);
 
-    const { firstName, lastName, emailId, password } = req.body;
+    const { firstName, lastName, emailId, password, gender } = req.body;
     // Encrypt the password
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -24,6 +24,7 @@ authRouter.post('/signup', async (req, res) => {
       lastName,
       emailId,
       password: passwordHash,
+      gender,
     });
     const savedUser = await user.save();
     // now make the jwt token and send it to the user in the response
@@ -43,7 +44,7 @@ authRouter.post('/signup', async (req, res) => {
 });
 
 // Login route
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', checkValidMiddleware, async (req, res) => {
   try {
     const { emailId, password } = req.body;
     if (!emailId) throw new Error('Invalid Credentials');
